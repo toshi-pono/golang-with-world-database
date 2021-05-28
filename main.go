@@ -36,6 +36,7 @@ func main() {
 
 	e := echo.New()
 	e.GET("/cities/:cityName", getCityInfoHandler)
+	e.POST("city", postNewCityHandler)
 	e.Start(":" + os.Getenv("API_PORT"))
 }
 
@@ -50,4 +51,20 @@ func getCityInfoHandler(c echo.Context) error {
 		log.Fatalf("DB Error: %s", err)
 	}
 	return c.JSON(http.StatusOK, city)
+}
+
+func postNewCityHandler(c echo.Context) error {
+	city := new(City)
+	err := c.Bind(city)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Bad Request")
+	}
+	result, err := db.Exec("INSERT INTO city (Name, CountryCode, District, Population) VALUES(?,?,?,?)", city.Name, city.CountryCode, city.District, city.Population)
+	if err != nil {
+		fmt.Printf("DB error: %s\n", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "DB error")
+	}
+	fmt.Println(result)
+	return c.String(http.StatusOK, "OK")
 }
