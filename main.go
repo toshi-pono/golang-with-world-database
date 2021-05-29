@@ -22,6 +22,11 @@ type City struct {
 	Population  int    `json:"population,omitempty" db:"Population"`
 }
 
+type CityPopulation struct {
+	ID         int `json:"id,omitempty" db:"ID"`
+	Population int `json:"population,omitempty" db:"Population"`
+}
+
 var (
 	db *sqlx.DB
 )
@@ -36,7 +41,8 @@ func main() {
 
 	e := echo.New()
 	e.GET("/cities/:cityName", getCityInfoHandler)
-	e.POST("city", postNewCityHandler)
+	e.POST("/city", postNewCityHandler)
+	e.PATCH("/city/population", updateCityPopulationHandler)
 	e.Start(":" + os.Getenv("API_PORT"))
 }
 
@@ -61,6 +67,22 @@ func postNewCityHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Bad Request")
 	}
 	result, err := db.Exec("INSERT INTO city (Name, CountryCode, District, Population) VALUES(?,?,?,?)", city.Name, city.CountryCode, city.District, city.Population)
+	if err != nil {
+		fmt.Printf("DB error: %s\n", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "DB error")
+	}
+	fmt.Println(result)
+	return c.String(http.StatusOK, "OK")
+}
+
+func updateCityPopulationHandler(c echo.Context) error {
+	cityPopulation := new(CityPopulation)
+	err := c.Bind(cityPopulation)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Bad Request")
+	}
+
+	result, err := db.Exec("UPDATE city SET population=? where ID=?", cityPopulation.Population, cityPopulation.ID)
 	if err != nil {
 		fmt.Printf("DB error: %s\n", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "DB error")
