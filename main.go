@@ -69,11 +69,17 @@ func main() {
 
 	withLogin := e.Group("")
 	withLogin.Use(checkLogin)
+	withLogin.GET("/me", getMyNameHandler)
 	withLogin.GET("/cities/:cityName", getCityInfoHandler)
 	withLogin.POST("/city", postNewCityHandler)
 	withLogin.PATCH("/city/population", updateCityPopulationHandler)
 
 	e.Start(":" + os.Getenv("API_PORT"))
+}
+
+func getMyNameHandler(c echo.Context) error {
+	fmt.Println(c.Get("userName"))
+	return c.String(http.StatusOK, c.Get("userName").(string))
 }
 
 func postSignUpHandler(c echo.Context) error {
